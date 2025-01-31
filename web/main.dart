@@ -3,31 +3,30 @@ import 'dart:convert';
 import 'dart:html';
 import 'package:http/http.dart' as http;
 
-
-// void main() {
-//   final now = DateTime.now();
-//   final element = web.document.querySelector('#output') as web.HTMLDivElement;
-//   element.text = 'The time is ${now.hour}:${now.minute} '
-//       'and your Dart web app is running!';
-// }
-
-
-
+int currentPage = 0;
+int countriesPerPage = 10;
+List<dynamic> countries = [];
 
 void main() async {
   final response = await http.get(Uri.parse('https://restcountries.com/v3.1/all'));
   if (response.statusCode == 200) {
-    final List<dynamic> countries = json.decode(response.body);
-    displayCountries(countries);
+    countries = json.decode(response.body);
+    displayCountries();
+    setupPagination();
   } else {
     print('Failed to load countries');
   }
 }
 
-void displayCountries(List<dynamic> countries) {
+void displayCountries() {
   final tbody = querySelector('#countries-table-body') as TableSectionElement;
+  tbody.children.clear(); // Clear the previous rows
 
-  for (var country in countries) {
+  final start = currentPage * countriesPerPage;
+  final end = start + countriesPerPage;
+  final currentPageCountries = countries.sublist(start, end > countries.length ? countries.length : end);
+
+  for (var country in currentPageCountries) {
     final name = country['name']['common'];
     final capital = country['capital']?.first ?? 'N/A';
     final population = country['population'];
@@ -50,52 +49,20 @@ void displayCountries(List<dynamic> countries) {
   }
 }
 
-//pagination des données récupérées
-void setupPagination(List<dynamic> countries) {
-  int currentPage = 1;
-  const int itemsPerPage = 10;
-  final int totalPages = (countries.length / itemsPerPage).ceil();
+void setupPagination() {
+  final paginationControls = querySelector('#pagination') as DivElement;
+  final totalPages = (countries.length / countriesPerPage).ceil();
 
-  void displayPage(int page) {
-    final startIndex = (page - 1) * itemsPerPage;
-    final endIndex = startIndex + itemsPerPage;
-    final paginatedCountries = countries.sublist(
-      startIndex,
-      endIndex < countries.length ? endIndex : countries.length,
-    );
-    displayCountries(paginatedCountries);
+  paginationControls.children.clear(); // Clear previous controls
+
+  for (int i = 0; i < totalPages; i++) {
+    final button = ButtonElement()
+      ..text = (i + 1).toString()
+      ..onClick.listen((event) {
+        currentPage = i;
+        displayCountries();
+      });
+
+    paginationControls.append(button);
   }
-
-  void updatePaginationControls() {
-    final paginationDiv = querySelector('#pagination') as DivElement;
-    paginationDiv.innerHtml = '';
-
-    if (currentPage > 1) {
-      final prevButton = ButtonElement()
-        ..text = 'Précédent'
-        ..onClick.listen((_) {
-          currentPage--;
-          displayPage(currentPage);
-          updatePaginationControls();
-        });
-      paginationDiv.append(prevButton);
-    }
-
-    final pageInfo = SpanElement()..text = ' Page $currentPage / $totalPages ';
-    paginationDiv.append(pageInfo);
-
-    if (currentPage < totalPages) {
-      final nextButton = ButtonElement()
-        ..text = 'Suivant'
-        ..onClick.listen((_) {
-          currentPage++;
-          displayPage(currentPage);
-          updatePaginationControls();
-        });
-      paginationDiv.append(nextButton);
-    }
-  }
-
-  displayPage(currentPage);
-  updatePaginationControls();
 }
