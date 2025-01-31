@@ -4,13 +4,17 @@ import 'dart:html';
 import 'package:http/http.dart' as http;
 
 int currentPage = 0;
-int countriesPerPage = 10;
+int countriesPerPage = 08;
 List<dynamic> countries = [];
 
 void main() async {
   final response = await http.get(Uri.parse('https://restcountries.com/v3.1/all'));
   if (response.statusCode == 200) {
     countries = json.decode(response.body);
+
+     // Trier les pays par leur nom en ordre alphabétique
+    countries.sort((a, b) => a['name']['common'].compareTo(b['name']['common']));
+
     displayCountries();
     setupPagination();
   } else {
@@ -20,12 +24,13 @@ void main() async {
 
 void displayCountries() {
   final tbody = querySelector('#countries-table-body') as TableSectionElement;
-  tbody.children.clear(); // Clear the previous rows
+  tbody.children.clear();
 
   final start = currentPage * countriesPerPage;
   final end = start + countriesPerPage;
   final currentPageCountries = countries.sublist(start, end > countries.length ? countries.length : end);
 
+  //
   for (var country in currentPageCountries) {
     final name = country['name']['common'];
     final capital = country['capital']?.first ?? 'N/A';
@@ -53,7 +58,7 @@ void setupPagination() {
   final paginationControls = querySelector('#pagination') as DivElement;
   final totalPages = (countries.length / countriesPerPage).ceil();
 
-  paginationControls.children.clear(); // Clear previous controls
+  paginationControls.children.clear(); 
 
   for (int i = 0; i < totalPages; i++) {
     final button = ButtonElement()
