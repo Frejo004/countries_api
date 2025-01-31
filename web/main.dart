@@ -49,3 +49,53 @@ void displayCountries(List<dynamic> countries) {
       }));
   }
 }
+
+//pagination des données récupérées
+void setupPagination(List<dynamic> countries) {
+  int currentPage = 1;
+  const int itemsPerPage = 10;
+  final int totalPages = (countries.length / itemsPerPage).ceil();
+
+  void displayPage(int page) {
+    final startIndex = (page - 1) * itemsPerPage;
+    final endIndex = startIndex + itemsPerPage;
+    final paginatedCountries = countries.sublist(
+      startIndex,
+      endIndex < countries.length ? endIndex : countries.length,
+    );
+    displayCountries(paginatedCountries);
+  }
+
+  void updatePaginationControls() {
+    final paginationDiv = querySelector('#pagination') as DivElement;
+    paginationDiv.innerHtml = '';
+
+    if (currentPage > 1) {
+      final prevButton = ButtonElement()
+        ..text = 'Précédent'
+        ..onClick.listen((_) {
+          currentPage--;
+          displayPage(currentPage);
+          updatePaginationControls();
+        });
+      paginationDiv.append(prevButton);
+    }
+
+    final pageInfo = SpanElement()..text = ' Page $currentPage / $totalPages ';
+    paginationDiv.append(pageInfo);
+
+    if (currentPage < totalPages) {
+      final nextButton = ButtonElement()
+        ..text = 'Suivant'
+        ..onClick.listen((_) {
+          currentPage++;
+          displayPage(currentPage);
+          updatePaginationControls();
+        });
+      paginationDiv.append(nextButton);
+    }
+  }
+
+  displayPage(currentPage);
+  updatePaginationControls();
+}
